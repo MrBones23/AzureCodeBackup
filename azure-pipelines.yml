@@ -1,0 +1,43 @@
+trigger:
+- main  # Adjust to your branch name
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+# Backend build
+- script: |
+    echo "Execute Amplify CLI with the helper script"
+    amplifyPush --simple
+  displayName: 'Build Backend (Amplify)'
+
+# Frontend pre-build
+- task: NodeTool@0
+  inputs:
+    versionSpec: '16.x'  # Adjust Node.js version if necessary
+  displayName: 'Install Node.js'
+
+- script: |
+    npm ci --cache .npm --prefer-offline
+  displayName: 'Pre-build Frontend'
+
+# Frontend build
+- script: |
+    npm run build
+  displayName: 'Build Frontend'
+
+# Publish artifacts (replace with your directory and patterns)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: 'build'
+    ArtifactName: 'frontend'
+    publishLocation: 'Container'
+
+# Cache npm dependencies
+- task: Cache@2
+  inputs:
+    key: 'npm | "$(Agent.OS)" | package-lock.json'
+    restoreKeys: |
+      npm | "$(Agent.OS)"
+    path: '.npm'
+  displayName: 'Cache npm dependencies'
